@@ -25,7 +25,6 @@ func main() {
 	router := gin.Default()
 	router.Static("/", "./public")
 
-	// Define the chat API endpoint
 	router.POST("/api/chat", handleChat(mcpAPIKey))
 
 	port := os.Getenv("PORT")
