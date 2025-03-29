@@ -36,7 +36,6 @@ func main() {
 	router.Run(":" + port)
 }
 
-// handleChat handles incoming chat requests
 func handleChat(apiKey string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var chatReq models.ChatRequest
