@@ -50,7 +50,6 @@ func handleChat(apiKey string) gin.HandlerFunc {
 			context = []models.Message{}
 		}
 
-		// Append user's message
 		context = services.AppendMessage(context, "user", chatReq.Message)
 
 		// Prepare MCP request
