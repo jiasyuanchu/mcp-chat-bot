@@ -6,8 +6,14 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"mcp-chat-bot/models"
+)
+
+const (
+	mcpAPIEndpoint = "https://api.mcp.ai/chat/completions"
+	contentType    = "application/json"
 )
 
 // CallMCPAPI sends a request to the MCP API
@@ -17,20 +23,39 @@ func CallMCPAPI(apiKey string, mcpReq models.MCPRequest) (*models.MCPResponse, e
 		return nil, fmt.Errorf("failed to marshal request data: %w", err)
 	}
 
-	req, err := http.NewRequest("POST", "https://api.mcp.ai/chat/completions", io.NopCloser(bytes.NewReader(jsonData)))
+	req, err := createRequest(mcpAPIEndpoint, apiKey, jsonData)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
+		return nil, err
 	}
 
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+apiKey)
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to call MCP API: %w", err)
 	}
 	defer resp.Body.Close()
 
+	return handleResponse(resp)
+}
+
+// createRequest creates a new HTTP request with appropriate headers
+func createRequest(url, apiKey string, jsonData []byte) (*http.Request, error) {
+	req, err := http.NewRequest("POST", url, io.NopCloser(bytes.NewReader(jsonData)))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	req.Header.Set("Content-Type", contentType)
+	req.Header.Set("Authorization", "Bearer "+apiKey)
+
+	return req, nil
+}
+
+// handleResponse processes the API response
+func handleResponse(resp *http.Response) (*models.MCPResponse, error) {
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("MCP API error: %s", string(body))
